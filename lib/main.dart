@@ -42,8 +42,10 @@ class _MyAppState extends State<MyApp> {
         "file": await MultipartFile.fromFile(filePath.path, filename: fileName),
       });
 
-      Response response = await Dio()
-          .post("http://qna.192.168.211.1.nip.io/api/question", data: formData);
+      Response response = await Dio().post(
+          "http://qna.192.168.211.1.nip.io/api/question",
+          data: formData,
+          options: Options(headers: {"Accept": "application/json"}));
       print("File upload response: $response");
       _showSnackBarMsg(response.data['message']);
     } catch (e) {
