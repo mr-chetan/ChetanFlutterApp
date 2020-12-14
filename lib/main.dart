@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 // import './card_manager.dart';
 import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart';
+import 'dart:io';
 
 void main() => runApp(MyApp());
 
@@ -10,6 +14,49 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  File _file;
+  final GlobalKey<ScaffoldState> _scaffoldstate =
+      new GlobalKey<ScaffoldState>();
+  Future getFile() async {
+    FilePickerResult result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      File file = File(result.files.single.path);
+      _showSnackBarMsg('GetFile');
+      setState(() {
+        _file = file;
+      });
+    } else {
+      // User canceled the picker
+    }
+  }
+
+  void _uploadFile(filePath) async {
+    String fileName = basename(filePath.path);
+    print("file base name:$fileName");
+
+    try {
+      FormData formData = new FormData.fromMap({
+        "name": "Chetan",
+        "age": 21,
+        "file": await MultipartFile.fromFile(filePath.path, filename: fileName),
+      });
+
+      Response response = await Dio()
+          .post("http://qna.192.168.211.1.nip.io/api/question", data: formData);
+      print("File upload response: $response");
+      _showSnackBarMsg(response.data['message']);
+    } catch (e) {
+      print("expectation Caugch: $e");
+    }
+  }
+
+  void _showSnackBarMsg(String msg) {
+    _scaffoldstate.currentState.showSnackBar(new SnackBar(
+      content: new Text(msg),
+    ));
+  }
+
   getDioData() async {
     var dio = Dio();
     Response response =
@@ -18,14 +65,19 @@ class _MyAppState extends State<MyApp> {
     return response.data;
   }
 
+  final NumberFormat formatter = NumberFormat.simpleCurrency(locale: 'en_IN');
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      supportedLocales: [
+        Locale('en', 'IN'),
+      ],
       debugShowCheckedModeBanner: false,
       title: 'ChetanApp',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
       // visualDensity: VisualDensity.adaptivePlatformDensity,
       home: Scaffold(
+        key: _scaffoldstate,
         appBar: AppBar(
           title: Text('ChetanApp'),
         ),
@@ -34,9 +86,21 @@ class _MyAppState extends State<MyApp> {
           children: [
             Container(
               margin: EdgeInsets.all(10.0),
-              child: Text(
-                'data',
-                style: TextStyle(backgroundColor: Colors.blue),
+              child: RaisedButton(
+                child: Text('Upload'),
+                onPressed: () {
+                  _showSnackBarMsg('upload');
+                  _uploadFile(_file);
+                },
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.all(10.0),
+              child: RaisedButton(
+                child: Text('GetFile'),
+                onPressed: () {
+                  getFile();
+                },
               ),
             ),
             ListView(
@@ -46,7 +110,7 @@ class _MyAppState extends State<MyApp> {
                 Card(
                   child: ListTile(
                     leading: FlutterLogo(size: 72.0),
-                    title: Text('s'),
+                    title: Text('Hello'),
                     subtitle: Text(
                         'A sufficiently long subtitle warrants three lines.'),
                     trailing: Icon(
